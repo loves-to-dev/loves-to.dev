@@ -198,26 +198,6 @@ Already have a domain? Point your subdomain to it!
 
 ---
 
-## 📊 Community Stats
-
-<div align="center">
-  
-  ![GitHub Stats](https://github-readme-stats.vercel.app/api?username=loves-to-dev&show_icons=true&theme=radical&count_private=true)
-  
-  **🌟 Join 1000+ developers who love to dev!**
-  
-  | Metric | Count |
-  |--------|--------|
-  | 📈 **Total Subdomains** | ![Domains](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=&query=%24.count&url=https%3A%2F%2Fapi.loves-to.dev%2Fstats) |
-  | ⚡ **Success Rate** | 99.9% |
-  | 🕐 **Average Approval** | < 24 hours |
-  | 🌍 **Countries Served** | 50+ |
-  | 💖 **Community Rating** | 4.9/5 ⭐ |
-  
-</div>
-
----
-
 ## 🛠️ Need Help?
 
 <div align="center">
