@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/loves-to-dev/register/blob/main/imgs/banner.png?raw=true" alt="loves-to.dev" width="200">
+  <img src="https://github.com/loves-to-dev/register/blob/main/imgs/banner.png?raw=true" alt="loves-to.dev" width="400">
   
   # loves-to.dev
   
