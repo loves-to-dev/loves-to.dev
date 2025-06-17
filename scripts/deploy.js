@@ -7,6 +7,7 @@ const path = require('path');
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const CF_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
 const DOMAIN_NAME = process.env.DOMAIN_NAME || 'loves-to.dev';
+const TEST_MODE = process.env.TEST_MODE === 'true';
 
 if (!CF_API_TOKEN || !CF_ZONE_ID) {
   console.error('❌ Missing required environment variables:');
@@ -45,6 +46,12 @@ function loadConfig() {
  * Make Cloudflare API request
  */
 async function cloudflareRequest(endpoint, method = 'GET', data = null) {
+  if (TEST_MODE) {
+    console.log(`🧪 TEST MODE: Would ${method} ${endpoint}`);
+    if (data) console.log(`   Data: ${JSON.stringify(data, null, 2)}`);
+    return { mock: true }; // Return mock data
+  }
+  
   const url = `https://api.cloudflare.com/client/v4${endpoint}`;
   
   const options = {
@@ -94,17 +101,8 @@ async function getExistingRecords() {
 function getDomainFiles(config) {
   const allDomains = [];
   
-  // Add reserved domains
-  config.reserved.forEach(subdomain => {
-    allDomains.push({
-      username: subdomain,
-      subdomain: `${subdomain}.${DOMAIN_NAME}`,
-      target: `reserved.${DOMAIN_NAME}`, // Point to reserved page
-      type: 'reserved'
-    });
-  });
-  
-  // Add user domains from files
+  // ONLY add user domains from files - skip reserved domains
+  // Reserved domains are just for validation, not DNS creation
   const domainsDir = path.join(process.cwd(), 'domains');
   if (fs.existsSync(domainsDir)) {
     const files = fs.readdirSync(domainsDir)
@@ -137,12 +135,7 @@ function getDomainFiles(config) {
  * Create a new DNS record
  */
 async function createDNSRecord(subdomain, target, type = 'user') {
-  const typeEmoji = {
-    user: '👤',
-    reserved: '🚫'
-  };
-  
-  console.log(`➕ Creating: ${typeEmoji[type]} ${subdomain} → ${target}`);
+  console.log(`➕ Creating: 👤 ${subdomain} → ${target}`);
   
   await cloudflareRequest(`/zones/${CF_ZONE_ID}/dns_records`, 'POST', {
     type: 'CNAME',
@@ -157,12 +150,7 @@ async function createDNSRecord(subdomain, target, type = 'user') {
  * Update an existing DNS record
  */
 async function updateDNSRecord(recordId, subdomain, target, type = 'user') {
-  const typeEmoji = {
-    user: '👤',
-    reserved: '🚫'
-  };
-  
-  console.log(`🔄 Updating: ${typeEmoji[type]} ${subdomain} → ${target}`);
+  console.log(`🔄 Updating: 👤 ${subdomain} → ${target}`);
   
   await cloudflareRequest(`/zones/${CF_ZONE_ID}/dns_records/${recordId}`, 'PUT', {
     type: 'CNAME',
@@ -203,11 +191,9 @@ async function deployDNS() {
     
     console.log(`📋 Found ${domainFiles.length} domain(s) to process:`);
     const counts = {
-      user: domainFiles.filter(d => d.type === 'user').length,
-      reserved: domainFiles.filter(d => d.type === 'reserved').length
+      user: domainFiles.filter(d => d.type === 'user').length
     };
-    console.log(`   👤 User domains: ${counts.user}`);
-    console.log(`   🚫 Reserved domains: ${counts.reserved}\n`);
+    console.log(`   👤 User domains: ${counts.user}\n`);
     
     // Create maps for easier lookup
     const existingMap = new Map();
@@ -234,11 +220,7 @@ async function deployDNS() {
           await updateDNSRecord(existing.id, domain.subdomain, domain.target, domain.type);
           updated++;
         } else {
-          const typeEmoji = {
-            user: '👤',
-            reserved: '🚫'
-          };
-          console.log(`✅ No change: ${typeEmoji[domain.type]} ${domain.subdomain} → ${domain.target}`);
+          console.log(`✅ No change: 👤 ${domain.subdomain} → ${domain.target}`);
         }
       } else {
         // Create new record
