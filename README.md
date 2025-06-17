@@ -7,7 +7,7 @@
   
   **Free `*.loves-to.dev` subdomains for passionate developers**
   
-  ![Total Domains](https://img.shields.io/badge/dynamic/json?color=gray&label=total%20domains&query=%24.length&url=https%3A%2F%2Fapi.github.com%2Frepos%2Floves-to-dev%2Floves-to-dev%2Fcontents%2Fdomains&style=for-the-badge)  ![Success Rate](https://img.shields.io/badge/success%20rate-99.9%25-brightgreen?style=for-the-badge)
+  ![Total Domains](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=total%20domains&query=%24.length&url=https%3A%2F%2Fapi.github.com%2Frepos%2Floves-to-dev%2Fregister%2Fcontents%2Fdomains&style=for-the-badge)   
   ![Average Approval](https://img.shields.io/badge/avg%20approval-24h-blue?style=for-the-badge)
   ![Open Source](https://img.shields.io/badge/open%20source-❤️-red?style=for-the-badge)
   
