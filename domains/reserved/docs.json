@@ -1,0 +1,9 @@
+{
+  "owner": {
+    "username": "docs",
+    "email": "admin@loves-to.dev"
+  },
+  "records": {
+    "CNAME": "docs.loves-to.dev"
+  }
+}
