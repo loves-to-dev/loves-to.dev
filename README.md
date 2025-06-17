@@ -212,7 +212,7 @@ Already have a domain? Point your subdomain to it!
 **[Create an Issue](https://github.com/loves-to-dev/loves-to-dev/issues)** - We'll fix it fast!
 
 ### 📧 **Email Support**
-**[support@loves-to.dev](mailto:support@loves-to.dev)** - Direct line to our team
+**[admin@loves-to.dev](mailto:admin@loves-to.dev)** - Direct line to our team
 
 </div>
 
