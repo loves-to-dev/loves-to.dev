@@ -256,10 +256,7 @@ We welcome contributions from developers who love to dev!
 
 ---
 
-<img src="https://raw.githubusercontent.com/loves-to-dev/loves-to.dev/main/assets/footer.svg" alt="Everyone loves to dev" width="400">
-
 **Made with 💖 by developers who love to dev**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=loves-to-dev/loves-to.dev&type=Date)](https://star-history.com/#loves-to-dev/loves-to.dev&Date)
+*Everyone loves to dev*
 
 </div>
