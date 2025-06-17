@@ -16,6 +16,32 @@ if (!CF_API_TOKEN || !CF_ZONE_ID) {
 }
 
 /**
+ * Load configuration files
+ */
+function loadConfig() {
+  const configDir = path.join(process.cwd(), 'config');
+  
+  const config = {
+    reserved: [],
+    trusted: []
+  };
+  
+  // Load reserved usernames
+  const reservedPath = path.join(configDir, 'reserved.json');
+  if (fs.existsSync(reservedPath)) {
+    config.reserved = JSON.parse(fs.readFileSync(reservedPath, 'utf8'));
+  }
+  
+  // Load trusted users
+  const trustedPath = path.join(configDir, 'trusted.json');
+  if (fs.existsSync(trustedPath)) {
+    config.trusted = JSON.parse(fs.readFileSync(trustedPath, 'utf8'));
+  }
+  
+  return config;
+}
+
+/**
  * Make Cloudflare API request
  */
 async function cloudflareRequest(endpoint, method = 'GET', data = null) {
@@ -51,89 +77,99 @@ async function getExistingRecords() {
   
   const records = await cloudflareRequest(`/zones/${CF_ZONE_ID}/dns_records?type=CNAME`);
   
-  // Filter only subdomains of our domain
+  // Filter only subdomains of our domain that are managed by loves-to.dev
   const subdomainRecords = records.filter(record => 
     record.name.endsWith(`.${DOMAIN_NAME}`) && 
-    record.name !== DOMAIN_NAME
+    record.name !== DOMAIN_NAME &&
+    record.comment && record.comment.includes('Managed by loves-to.dev')
   );
   
-  console.log(`   Found ${subdomainRecords.length} existing CNAME records`);
+  console.log(`   Found ${subdomainRecords.length} managed CNAME records`);
   return subdomainRecords;
 }
 
 /**
  * Get all domain files that should have DNS records
  */
-function getDomainFiles() {
-  const domainsDir = path.join(process.cwd(), 'domains');
+function getDomainFiles(config) {
+  const allDomains = [];
   
-  if (!fs.existsSync(domainsDir)) {
-    return [];
-  }
-  
-  const files = fs.readdirSync(domainsDir)
-    .filter(file => file.endsWith('.json') && file !== 'reserved')
-    .map(file => {
-      const filePath = path.join(domainsDir, file);
-      const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      return {
-        username: file.replace('.json', ''),
-        subdomain: `${file.replace('.json', '')}.${DOMAIN_NAME}`,
-        target: content.records.CNAME,
-        email: content.owner.email
-      };
+  // Add reserved domains
+  config.reserved.forEach(subdomain => {
+    allDomains.push({
+      username: subdomain,
+      subdomain: `${subdomain}.${DOMAIN_NAME}`,
+      target: `reserved.${DOMAIN_NAME}`, // Point to reserved page
+      type: 'reserved'
     });
+  });
   
-  // Also include reserved domains
-  const reservedDir = path.join(domainsDir, 'reserved');
-  if (fs.existsSync(reservedDir)) {
-    const reservedFiles = fs.readdirSync(reservedDir)
+  // Add user domains from files
+  const domainsDir = path.join(process.cwd(), 'domains');
+  if (fs.existsSync(domainsDir)) {
+    const files = fs.readdirSync(domainsDir)
       .filter(file => file.endsWith('.json'))
       .map(file => {
-        const filePath = path.join(reservedDir, file);
-        const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        return {
-          username: file.replace('.json', ''),
-          subdomain: `${file.replace('.json', '')}.${DOMAIN_NAME}`,
-          target: content.records.CNAME,
-          email: content.owner.email,
-          reserved: true
-        };
-      });
+        try {
+          const filePath = path.join(domainsDir, file);
+          const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          return {
+            username: file.replace('.json', ''),
+            subdomain: `${file.replace('.json', '')}.${DOMAIN_NAME}`,
+            target: content.records.CNAME,
+            // Email is kept private - not included in DNS deployment
+            type: 'user'
+          };
+        } catch (error) {
+          console.warn(`⚠️  Warning: Could not process ${file}: ${error.message}`);
+          return null;
+        }
+      })
+      .filter(Boolean);
     
-    files.push(...reservedFiles);
+    allDomains.push(...files);
   }
   
-  return files;
+  return allDomains;
 }
 
 /**
  * Create a new DNS record
  */
-async function createDNSRecord(subdomain, target) {
-  console.log(`➕ Creating: ${subdomain} → ${target}`);
+async function createDNSRecord(subdomain, target, type = 'user') {
+  const typeEmoji = {
+    user: '👤',
+    reserved: '🚫'
+  };
+  
+  console.log(`➕ Creating: ${typeEmoji[type]} ${subdomain} → ${target}`);
   
   await cloudflareRequest(`/zones/${CF_ZONE_ID}/dns_records`, 'POST', {
     type: 'CNAME',
     name: subdomain,
     content: target,
     ttl: 300, // 5 minutes
-    comment: `Managed by loves-to.dev - ${new Date().toISOString()}`
+    comment: `Managed by loves-to.dev (${type}) - ${new Date().toISOString()}`
   });
 }
 
 /**
  * Update an existing DNS record
  */
-async function updateDNSRecord(recordId, subdomain, target) {
-  console.log(`🔄 Updating: ${subdomain} → ${target}`);
+async function updateDNSRecord(recordId, subdomain, target, type = 'user') {
+  const typeEmoji = {
+    user: '👤',
+    reserved: '🚫'
+  };
+  
+  console.log(`🔄 Updating: ${typeEmoji[type]} ${subdomain} → ${target}`);
   
   await cloudflareRequest(`/zones/${CF_ZONE_ID}/dns_records/${recordId}`, 'PUT', {
     type: 'CNAME',
     name: subdomain,
     content: target,
     ttl: 300,
-    comment: `Managed by loves-to.dev - ${new Date().toISOString()}`
+    comment: `Managed by loves-to.dev (${type}) - ${new Date().toISOString()}`
   });
 }
 
@@ -153,13 +189,25 @@ async function deployDNS() {
   try {
     console.log(`🚀 Starting DNS deployment for ${DOMAIN_NAME}...\n`);
     
+    // Load configuration
+    console.log('📋 Loading configuration...');
+    const config = loadConfig();
+    console.log(`   Reserved domains: ${config.reserved.length}`);
+    console.log(`   Trusted users: ${config.trusted.length}\n`);
+    
     // Get current state
     const [existingRecords, domainFiles] = await Promise.all([
       getExistingRecords(),
-      getDomainFiles()
+      getDomainFiles(config)
     ]);
     
-    console.log(`📋 Found ${domainFiles.length} domain file(s) to process\n`);
+    console.log(`📋 Found ${domainFiles.length} domain(s) to process:`);
+    const counts = {
+      user: domainFiles.filter(d => d.type === 'user').length,
+      reserved: domainFiles.filter(d => d.type === 'reserved').length
+    };
+    console.log(`   👤 User domains: ${counts.user}`);
+    console.log(`   🚫 Reserved domains: ${counts.reserved}\n`);
     
     // Create maps for easier lookup
     const existingMap = new Map();
@@ -183,14 +231,18 @@ async function deployDNS() {
       if (existing) {
         // Update if target changed
         if (existing.content !== domain.target) {
-          await updateDNSRecord(existing.id, domain.subdomain, domain.target);
+          await updateDNSRecord(existing.id, domain.subdomain, domain.target, domain.type);
           updated++;
         } else {
-          console.log(`✅ No change: ${domain.subdomain} → ${domain.target}`);
+          const typeEmoji = {
+            user: '👤',
+            reserved: '🚫'
+          };
+          console.log(`✅ No change: ${typeEmoji[domain.type]} ${domain.subdomain} → ${domain.target}`);
         }
       } else {
         // Create new record
-        await createDNSRecord(domain.subdomain, domain.target);
+        await createDNSRecord(domain.subdomain, domain.target, domain.type);
         created++;
       }
     }
