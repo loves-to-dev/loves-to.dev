@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/loves-to-dev/loves-to.dev/main/assets/logo.svg" alt="loves-to.dev" width="200">
+  <img src="https://github.com/loves-to-dev/register/blob/main/imgs/banner.png?raw=true" alt="loves-to.dev" width="400">
   
   # loves-to.dev
   
@@ -7,8 +7,7 @@
   
   **Free `*.loves-to.dev` subdomains for passionate developers**
   
-  ![Total Domains](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=total%20domains&query=%24.count&url=https%3A%2F%2Fapi.loves-to.dev%2Fstats&style=for-the-badge)
-  ![Success Rate](https://img.shields.io/badge/success%20rate-99.9%25-brightgreen?style=for-the-badge)
+  ![Total Domains](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=total%20domains&query=%24.length&url=https%3A%2F%2Fapi.github.com%2Frepos%2Floves-to-dev%2Fregister%2Fcontents%2Fdomains&style=for-the-badge)   
   ![Average Approval](https://img.shields.io/badge/avg%20approval-24h-blue?style=for-the-badge)
   ![Open Source](https://img.shields.io/badge/open%20source-❤️-red?style=for-the-badge)
   
@@ -17,7 +16,7 @@
   [![Website](https://img.shields.io/badge/🌐%20website-loves--to.dev-ff69b4?style=for-the-badge)](https://loves-to.dev)
   [![Documentation](https://img.shields.io/badge/📚%20docs-docs.loves--to.dev-blue?style=for-the-badge)](https://docs.loves-to.dev)
   [![Discord](https://img.shields.io/discord/123456789?color=7289da&label=discord&style=for-the-badge)](https://discord.gg/loves-to-dev)
-  [![GitHub Issues](https://img.shields.io/github/issues/loves-to-dev/loves-to.dev?style=for-the-badge)](https://github.com/loves-to-dev/loves-to-dev/issues)
+  [![GitHub Issues](https://img.shields.io/github/issues/loves-to-dev/register?style=for-the-badge)](https://github.com/loves-to-dev/register/issues)
   
 </div>
 
@@ -199,26 +198,6 @@ Already have a domain? Point your subdomain to it!
 
 ---
 
-## 📊 Community Stats
-
-<div align="center">
-  
-  ![GitHub Stats](https://github-readme-stats.vercel.app/api?username=loves-to-dev&show_icons=true&theme=radical&count_private=true)
-  
-  **🌟 Join 1000+ developers who love to dev!**
-  
-  | Metric | Count |
-  |--------|--------|
-  | 📈 **Total Subdomains** | ![Domains](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=&query=%24.count&url=https%3A%2F%2Fapi.loves-to.dev%2Fstats) |
-  | ⚡ **Success Rate** | 99.9% |
-  | 🕐 **Average Approval** | < 24 hours |
-  | 🌍 **Countries Served** | 50+ |
-  | 💖 **Community Rating** | 4.9/5 ⭐ |
-  
-</div>
-
----
-
 ## 🛠️ Need Help?
 
 <div align="center">
@@ -265,10 +244,6 @@ We welcome contributions from developers who love to dev!
 
 <div align="center">
 
-**🎉 Proudly sponsored by:**
-
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)](https://cloudflare.com)
-
 **💖 Inspired by:**
 
 [![is-a.dev](https://img.shields.io/badge/is--a.dev-000000?style=for-the-badge&logo=github&logoColor=white)](https://is-a.dev)
@@ -277,10 +252,7 @@ We welcome contributions from developers who love to dev!
 
 ---
 
-<img src="https://raw.githubusercontent.com/loves-to-dev/loves-to.dev/main/assets/footer.svg" alt="Everyone loves to dev" width="400">
-
 **Made with 💖 by developers who love to dev**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=loves-to-dev/loves-to.dev&type=Date)](https://star-history.com/#loves-to-dev/loves-to.dev&Date)
+*Everyone loves to dev*
 
 </div>
