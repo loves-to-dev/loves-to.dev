@@ -244,10 +244,6 @@ We welcome contributions from developers who love to dev!
 
 <div align="center">
 
-**🎉 Proudly sponsored by:**
-
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)](https://cloudflare.com)
-
 **💖 Inspired by:**
 
 [![is-a.dev](https://img.shields.io/badge/is--a.dev-000000?style=for-the-badge&logo=github&logoColor=white)](https://is-a.dev)
