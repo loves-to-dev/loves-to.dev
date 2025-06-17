@@ -16,7 +16,7 @@
   [![Website](https://img.shields.io/badge/🌐%20website-loves--to.dev-ff69b4?style=for-the-badge)](https://loves-to.dev)
   [![Documentation](https://img.shields.io/badge/📚%20docs-docs.loves--to.dev-blue?style=for-the-badge)](https://docs.loves-to.dev)
   [![Discord](https://img.shields.io/discord/123456789?color=7289da&label=discord&style=for-the-badge)](https://discord.gg/loves-to-dev)
-  [![GitHub Issues](https://img.shields.io/github/issues/loves-to-dev/loves-to.dev?style=for-the-badge)](https://github.com/loves-to-dev/loves-to-dev/issues)
+  [![GitHub Issues](https://img.shields.io/github/issues/loves-to-dev/register?style=for-the-badge)](https://github.com/loves-to-dev/register/issues)
   
 </div>
 
