@@ -4,17 +4,29 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Get list of reserved usernames from domains/reserved/ folder
+ * Load configuration files
  */
-function getReservedUsernames() {
-  const reservedDir = path.join(process.cwd(), 'domains', 'reserved');
+function loadConfig() {
+  const configDir = path.join(process.cwd(), 'config');
   
-  if (!fs.existsSync(reservedDir)) {
-    return [];
+  const config = {
+    reserved: [],
+    trusted: []
+  };
+  
+  // Load reserved usernames
+  const reservedPath = path.join(configDir, 'reserved.json');
+  if (fs.existsSync(reservedPath)) {
+    config.reserved = JSON.parse(fs.readFileSync(reservedPath, 'utf8'));
   }
   
-  const files = fs.readdirSync(reservedDir).filter(file => file.endsWith('.json'));
-  return files.map(file => file.replace('.json', ''));
+  // Load trusted users (can have multiple domains)
+  const trustedPath = path.join(configDir, 'trusted.json');
+  if (fs.existsSync(trustedPath)) {
+    config.trusted = JSON.parse(fs.readFileSync(trustedPath, 'utf8'));
+  }
+  
+  return config;
 }
 
 /**
@@ -41,12 +53,6 @@ function isValidUsername(username) {
   // Must be between 1 and 63 characters (DNS limit)
   if (username.length < 1 || username.length > 63) {
     return { valid: false, reason: 'must be between 1 and 63 characters' };
-  }
-  
-  // Check if reserved
-  const reservedUsernames = getReservedUsernames();
-  if (reservedUsernames.includes(username)) {
-    return { valid: false, reason: 'is a reserved username' };
   }
   
   return { valid: true };
@@ -82,20 +88,52 @@ function isValidDomain(domain) {
 }
 
 /**
- * Check for duplicate usernames
+ * Check domain ownership limits
+ */
+function checkDomainLimits(files, config) {
+  const userDomainCount = {};
+  const violations = [];
+  
+  files.forEach(file => {
+    const username = file.data?.owner?.username;
+    if (!username) return;
+    
+    userDomainCount[username] = (userDomainCount[username] || 0) + 1;
+  });
+  
+  Object.entries(userDomainCount).forEach(([username, count]) => {
+    const isTrusted = config.trusted.includes(username);
+    
+    if (!isTrusted && count > 1) {
+      violations.push({
+        username,
+        count,
+        reason: `User "${username}" has ${count} domains but is not in trusted list (limit: 1)`
+      });
+    }
+  });
+  
+  return violations;
+}
+
+/**
+ * Check for duplicate usernames across all files
  */
 function checkForDuplicates(files) {
   const usernames = {};
   const duplicates = [];
   
   files.forEach(file => {
-    if (usernames[file.username]) {
+    const username = file.data?.owner?.username;
+    if (!username) return;
+    
+    if (usernames[username]) {
       duplicates.push({
-        username: file.username,
-        files: [usernames[file.username], file.filePath]
+        username: username,
+        files: [usernames[username], file.filePath]
       });
     } else {
-      usernames[file.username] = file.filePath;
+      usernames[username] = file.filePath;
     }
   });
   
@@ -105,7 +143,7 @@ function checkForDuplicates(files) {
 /**
  * Validates a single domain JSON file
  */
-function validateDomainFile(filePath, filename) {
+function validateDomainFile(filePath, filename, config) {
   const errors = [];
   
   try {
@@ -117,7 +155,8 @@ function validateDomainFile(filePath, filename) {
     } catch (parseError) {
       return {
         success: false,
-        errors: [`Invalid JSON format: ${parseError.message}`]
+        errors: [`Invalid JSON format: ${parseError.message}`],
+        data: null
       };
     }
     
@@ -141,6 +180,11 @@ function validateDomainFile(filePath, filename) {
         if (!usernameValidation.valid) {
           errors.push(`Invalid username "${username}": ${usernameValidation.reason}`);
         }
+        
+        // Check if reserved
+        if (config.reserved.includes(username)) {
+          errors.push(`Username "${username}" is reserved`);
+        }
       }
       
       // Validate email
@@ -155,11 +199,20 @@ function validateDomainFile(filePath, filename) {
     if (!domainData.records || typeof domainData.records !== 'object') {
       errors.push('Missing or invalid "records" object');
     } else {
-      // Validate CNAME record
+      // Validate CNAME record (only supported record type)
       if (!domainData.records.CNAME || typeof domainData.records.CNAME !== 'string') {
         errors.push('Missing or invalid "records.CNAME" field');
       } else if (!isValidDomain(domainData.records.CNAME)) {
         errors.push(`Invalid CNAME domain: ${domainData.records.CNAME}`);
+      }
+      
+      // Ensure only CNAME is used
+      const allowedRecords = ['CNAME'];
+      const providedRecords = Object.keys(domainData.records);
+      const invalidRecords = providedRecords.filter(record => !allowedRecords.includes(record));
+      
+      if (invalidRecords.length > 0) {
+        errors.push(`Only CNAME records are supported. Invalid records: ${invalidRecords.join(', ')}`);
       }
     }
     
@@ -172,13 +225,14 @@ function validateDomainFile(filePath, filename) {
   } catch (error) {
     return {
       success: false,
-      errors: [`Error reading file: ${error.message}`]
+      errors: [`Error reading file: ${error.message}`],
+      data: null
     };
   }
 }
 
 /**
- * Get all domain files (excluding reserved folder)
+ * Get all domain files
  */
 function getAllDomainFiles() {
   const domainsDir = path.join(process.cwd(), 'domains');
@@ -188,11 +242,11 @@ function getAllDomainFiles() {
   }
   
   const files = fs.readdirSync(domainsDir)
-    .filter(file => file.endsWith('.json') && file !== 'reserved')
+    .filter(file => file.endsWith('.json'))
     .map(file => ({
       filePath: path.join(domainsDir, file),
       filename: file.replace('.json', ''),
-      username: file.replace('.json', '')
+      data: null
     }));
   
   return files;
@@ -202,6 +256,13 @@ function getAllDomainFiles() {
  * Main validation function
  */
 function validateAllDomains() {
+  console.log('🔍 Loading configuration...');
+  const config = loadConfig();
+  
+  console.log(`📋 Configuration loaded:`);
+  console.log(`   Reserved usernames: ${config.reserved.length}`);
+  console.log(`   Trusted users: ${config.trusted.length}\n`);
+  
   const files = getAllDomainFiles();
   
   if (files.length === 0) {
@@ -211,23 +272,13 @@ function validateAllDomains() {
   
   console.log(`🔍 Validating ${files.length} domain file(s)...\n`);
   
-  // Check for duplicates
-  const duplicates = checkForDuplicates(files);
-  if (duplicates.length > 0) {
-    console.error('❌ Duplicate usernames found:');
-    duplicates.forEach(dup => {
-      console.error(`   Username "${dup.username}" appears in multiple files:`);
-      dup.files.forEach(file => console.error(`     - ${file}`));
-    });
-    console.error('');
-  }
-  
-  let hasErrors = duplicates.length > 0;
+  let hasErrors = false;
   let validCount = 0;
   
-  // Validate each file
+  // Validate each file and collect data
   files.forEach(file => {
-    const result = validateDomainFile(file.filePath, file.filename);
+    const result = validateDomainFile(file.filePath, file.filename, config);
+    file.data = result.data;
     
     if (result.success) {
       console.log(`✅ ${file.filename}.json`);
@@ -242,11 +293,35 @@ function validateAllDomains() {
     }
   });
   
+  // Check for duplicates
+  const duplicates = checkForDuplicates(files.filter(f => f.data));
+  if (duplicates.length > 0) {
+    console.error('❌ Duplicate usernames found:');
+    duplicates.forEach(dup => {
+      console.error(`   Username "${dup.username}" appears in multiple files:`);
+      dup.files.forEach(file => console.error(`     - ${file}`));
+    });
+    console.error('');
+    hasErrors = true;
+  }
+  
+  // Check domain limits
+  const limitViolations = checkDomainLimits(files.filter(f => f.data), config);
+  if (limitViolations.length > 0) {
+    console.error('❌ Domain limit violations:');
+    limitViolations.forEach(violation => {
+      console.error(`   ${violation.reason}`);
+    });
+    console.error('');
+    hasErrors = true;
+  }
+  
   // Summary
   console.log(`\n📊 Validation Summary:`);
   console.log(`   Valid: ${validCount}`);
   console.log(`   Invalid: ${files.length - validCount}`);
-  console.log(`   Reserved usernames: ${getReservedUsernames().length}`);
+  console.log(`   Duplicates: ${duplicates.length}`);
+  console.log(`   Limit violations: ${limitViolations.length}`);
   
   if (hasErrors) {
     console.error('\n❌ Validation failed! Please fix the errors above.');
@@ -264,5 +339,6 @@ if (require.main === module) {
 module.exports = {
   validateAllDomains,
   validateDomainFile,
-  getAllDomainFiles
+  getAllDomainFiles,
+  loadConfig
 };
