@@ -9,6 +9,11 @@ on:
     branches: [main]
     paths: ['domains/**']
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   validate:
     name: Validate Domain Files
@@ -57,7 +62,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '❌ **Domain validation failed!**\n\nPlease check the errors in the workflow logs above and fix your JSON file(s). Common issues:\n\n- Invalid JSON format\n- Username doesn\'t match filename\n- Invalid email address\n- Invalid CNAME target\n- Reserved username\n\nFix the issues and push again for automatic re-validation.'
+              body: '❌ **Domain validation failed!**\n\nPlease check the errors in the workflow logs above and fix your JSON file(s). Common issues:\n\n- Invalid JSON format\n- GitHub username doesn\'t match PR author\n- Invalid email address\n- Invalid CNAME target\n- Reserved subdomain name\n- User exceeds domain limit\n\nFix the issues and push again for automatic re-validation.'
             })
 
   deploy:
